@@ -36,7 +36,7 @@
 
 ## 🛠️ Công nghệ sử dụng (Tech Stack)
 
-* **Ngôn ngữ:** [Java / C# / Python / PHP / Go] (Sửa lại cho đúng)
+* **Ngôn ngữ:** [Java / C# / Python / PHP / Go]
 * **Giao thức:** TCP/IP, Socket
 * **Cơ sở dữ liệu:** [MySQL / SQL Server / SQLite]
 * **Công cụ:** [JetBrains / Visual Studio / VS Code]
