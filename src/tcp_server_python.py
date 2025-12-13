@@ -45,7 +45,7 @@ async def handle_client(reader, writer):
     except ConnectionResetError:
         print(f"⚠️  Client {addr} ngắt kết nối đột ngột.")
     finally:
-        print(f"👋 Đóng kết nối: {addr}")
+        print(f" Đóng kết nối: {addr}")
         writer.close()
         await writer.wait_closed()
 
