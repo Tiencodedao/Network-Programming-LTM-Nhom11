@@ -35,7 +35,7 @@ async def handle_client(reader, writer):
                 break
 
             message = data.decode('utf-8')
-            print(f"   📩 Nhận: {message}")
+            print(f"    Nhận: {message}")
 
             # Gửi phản hồi
             response = f"Server Python (Async) đã nhận: {message}"
