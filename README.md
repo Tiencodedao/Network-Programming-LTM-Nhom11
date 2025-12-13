@@ -31,7 +31,7 @@
 | 2 | Nguyễn Minh Chiến | [MSSV] | Null |
 | 3 | Nguyễn Thế Hiệp | [MSSV] | Null |
 | 4 | Nguyễn Ngọc Duy | [MSSV] | Null |
-| 5 | [Tên thành viên] | [MSSV] | Null |
+| 5 | Đào Anh Kiệt | [MSSV] | Null |
 ---
 
 ## 🛠️ Công nghệ sử dụng (Tech Stack)
