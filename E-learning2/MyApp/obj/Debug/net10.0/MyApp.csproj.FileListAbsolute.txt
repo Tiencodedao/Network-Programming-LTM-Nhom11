@@ -1,0 +1,15 @@
+C:\Users\Dell\MyApp\bin\Debug\net10.0\MyApp.exe
+C:\Users\Dell\MyApp\bin\Debug\net10.0\MyApp.deps.json
+C:\Users\Dell\MyApp\bin\Debug\net10.0\MyApp.runtimeconfig.json
+C:\Users\Dell\MyApp\bin\Debug\net10.0\MyApp.dll
+C:\Users\Dell\MyApp\bin\Debug\net10.0\MyApp.pdb
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.AssemblyInfoInputs.cache
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.AssemblyInfo.cs
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.csproj.CoreCompileInputs.cache
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.dll
+C:\Users\Dell\MyApp\obj\Debug\net10.0\refint\MyApp.dll
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.pdb
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.genruntimeconfig.cache
+C:\Users\Dell\MyApp\obj\Debug\net10.0\ref\MyApp.dll
+C:\Users\Dell\MyApp\obj\Debug\net10.0\MyApp.sourcelink.json
