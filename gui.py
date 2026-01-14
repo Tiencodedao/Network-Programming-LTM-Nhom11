@@ -12,7 +12,7 @@ OX_COLS = 20
 GAME_PORT = 9999
 DISCOVERY_PORT = 9998
 
-# Bảng màu
+# Bảng màu....
 COLOR_BG_MAIN = "#2C3E50"
 COLOR_SIDEBAR = "#34495E"
 COLOR_BOARD = "#ECF0F1"
@@ -573,7 +573,6 @@ class Threading_socket():
                     self.conn.sendall(msg.encode())
                 except:
                     pass
-
 
 if __name__ == "__main__":
     window = Window()
