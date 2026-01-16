@@ -6,7 +6,7 @@ from ui.chat_widget import ChatWidget
 
 
 class SidebarWidget(tk.Frame):
-    def __init__(self, parent, on_join_room=None, on_create_room=None, on_undo=None, on_chat_send=None):
+    def __init__(self, parent, on_join_room=None, on_create_room=None, on_undo=None, on_chat_send=None, on_back_to_menu=None):
         """
         Args:
             parent: Widget cha
@@ -14,6 +14,7 @@ class SidebarWidget(tk.Frame):
             on_create_room: Callback khi tạo phòng
             on_undo: Callback khi undo
             on_chat_send: Callback khi gửi tin nhắn chat (text)
+            on_back_to_menu: Callback khi quay lại menu
         """
         super().__init__(parent, bg="#34495E", width=250, padx=10, pady=10)
         self.pack_propagate(False)
@@ -22,6 +23,7 @@ class SidebarWidget(tk.Frame):
         self.on_create_room = on_create_room
         self.on_undo = on_undo
         self.on_chat_send = on_chat_send
+        self.on_back_to_menu = on_back_to_menu
 
         self.chat_widget = None  # Sẽ được tạo trong _create_widgets
 
@@ -114,7 +116,18 @@ class SidebarWidget(tk.Frame):
             fg="white",
             command=self._handle_undo
         )
-        btn_undo.pack(fill=tk.X, pady=(0, 10))
+        btn_undo.pack(fill=tk.X, pady=(0, 5))
+
+        # Nút quay lại menu
+        btn_menu = tk.Button(
+            self,
+            text="◄ Quay lại Menu",
+            bg="#3498DB",
+            fg="white",
+            font=("Arial", 9),
+            command=self._handle_back_to_menu
+        )
+        btn_menu.pack(fill=tk.X, pady=(0, 10))
 
         # Chat box
         chat_frame = tk.LabelFrame(
@@ -149,6 +162,11 @@ class SidebarWidget(tk.Frame):
         """Xử lý nút undo"""
         if self.on_undo:
             self.on_undo()
+
+    def _handle_back_to_menu(self):
+        """Xử lý nút quay lại menu"""
+        if self.on_back_to_menu:
+            self.on_back_to_menu()
 
     def _handle_chat_send(self, text):
         """Xử lý gửi tin nhắn chat"""

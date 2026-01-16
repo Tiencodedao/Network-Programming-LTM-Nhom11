@@ -14,6 +14,7 @@ from network.server import GameServer
 from network.client import GameClient
 from ui.board import BoardWidget
 from ui.sidebar import SidebarWidget
+from utils.ai import CaroAI
 
 
 # Màu sắc
@@ -28,7 +29,7 @@ OX_COLS = 20
 
 
 class CaroWindow(tk.Tk):
-    def __init__(self):
+    def __init__(self, initial_mode=None, ai_difficulty="medium"):
         super().__init__()
         self.title("Caro LAN Ultimate - Modular Structure")
         self.geometry("1100x700")
@@ -48,10 +49,28 @@ class CaroWindow(tk.Tk):
         self.timer_thread_obj = None
         self.room_code = ""
 
+        # Game mode
+        self.game_mode = initial_mode  # "pvp" or "ai"
+        self.ai_difficulty = ai_difficulty
+
+        # AI
+        self.ai = None
+        if self.game_mode == "ai":
+            self.ai = CaroAI(symbol='O', difficulty=ai_difficulty)
+            self.player.set_role("X")  # Player là X, AI là O
+
         # UI Components
         self.sidebar = None
         self.board = None
         self._setup_ui()
+
+        # Tự động thực hiện action dựa trên mode
+        if self.game_mode == "pvp":
+            # Chế độ PvP - người dùng có thể chọn tạo phòng hoặc vào phòng
+            pass
+        elif self.game_mode == "ai":
+            # Chế độ AI - khởi tạo game ngay
+            self.after(100, self.start_ai_game)
 
     def _setup_ui(self):
         """Khởi tạo giao diện"""
@@ -61,7 +80,8 @@ class CaroWindow(tk.Tk):
             on_join_room=self.handle_join_room,
             on_create_room=self.handle_create_room,
             on_undo=self.handle_undo,
-            on_chat_send=self.handle_chat_send
+            on_chat_send=self.handle_chat_send,
+            on_back_to_menu=self.handle_back_to_menu
         )
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -194,7 +214,11 @@ class CaroWindow(tk.Tk):
             return
 
         if sending:
-            if not self.player.can_move(current_turn):
+            # Nếu chế độ AI, chỉ cho phép đánh khi là lượt người chơi
+            if self.game_mode == "ai":
+                if current_turn != self.player.role:
+                    return
+            elif not self.player.can_move(current_turn):
                 return
 
         # Thêm nước đi
@@ -208,23 +232,32 @@ class CaroWindow(tk.Tk):
         color = COLOR_X if current_turn == "X" else COLOR_O
         self.board.set_cell(x, y, current_turn, color)
 
-        # Gửi qua mạng
-        if sending:
+        # Gửi qua mạng (không gửi nếu là chế độ AI)
+        if sending and self.game_mode != "ai":
             self.send_data(f"hit|{x}|{y}")
 
         # Kiểm tra thắng
         if self.game_state.check_win(x, y, current_turn):
             self.timer_running = False
             winner_msg = f"Người chơi {current_turn} thắng!"
+            if self.game_mode == "ai":
+                if current_turn == self.player.role:
+                    winner_msg = "Bạn thắng! 🎉"
+                else:
+                    winner_msg = "AI thắng! 🤖"
             self.sidebar.set_status(winner_msg, "purple")
             messagebox.showinfo("Kết thúc", winner_msg)
 
-            if self.player.is_player():
+            if self.player.is_player() or self.game_mode == "ai":
                 self.ask_rematch()
             return
 
         # Reset timer
         self.reset_timer()
+
+        # Nếu là chế độ AI và vừa là lượt người chơi, cho AI đánh
+        if self.game_mode == "ai" and current_turn == self.player.role and sending:
+            self.after(500, self.ai_make_move)  # Delay 500ms cho tự nhiên
 
     def handle_undo(self, synchronized=True):
         """Xử lý đi lại"""
@@ -245,24 +278,47 @@ class CaroWindow(tk.Tk):
 
     def ask_rematch(self):
         """Hỏi chơi tiếp"""
-        ans = messagebox.askyesno("Ván mới?", "Bạn có muốn tiếp tục chơi không?\n(No = Làm khán giả)")
-        if ans:
-            self.sidebar.set_status("Đã chọn Tiếp tục. Đang chờ...", "blue")
-            self.send_data("REMATCH|YES")
-            if self.game_server:
+        if self.game_mode == "ai":
+            # Chế độ AI - không cần hỏi làm khán giả
+            ans = messagebox.askyesno("Ván mới?", "Bạn có muốn chơi tiếp không?")
+            if ans:
                 self.reset_board_ui()
+                self.sidebar.set_status("Ván mới - Bạn là X", "#2ECC71")
+            else:
+                self.quit()
         else:
-            self.player.set_role("WATCH")
-            self.sidebar.set_status("Chế độ Khán Giả.", "gray")
-            self.sidebar.set_role("Khán Giả")
-            self.send_data("REMATCH|NO")
+            # Chế độ multiplayer
+            ans = messagebox.askyesno("Ván mới?", "Bạn có muốn tiếp tục chơi không?\n(No = Làm khán giả)")
+            if ans:
+                self.sidebar.set_status("Đã chọn Tiếp tục. Đang chờ...", "blue")
+                self.send_data("REMATCH|YES")
+                if self.game_server:
+                    self.reset_board_ui()
+            else:
+                self.player.set_role("WATCH")
+                self.sidebar.set_status("Chế độ Khán Giả.", "gray")
+                self.sidebar.set_role("Khán Giả")
+                self.send_data("REMATCH|NO")
 
     def reset_board_ui(self):
         """Reset giao diện bàn cờ"""
         self.board.reset()
         self.game_state.reset()
         self.timer_running = False
-        self.sidebar.set_status("Ván mới bắt đầu!", "#2ECC71")
+
+        # Nếu là chế độ AI, khởi tạo lại AI
+        if self.game_mode == "ai":
+            self.ai = CaroAI(symbol='O', difficulty=self.ai_difficulty)
+            self.player.set_role("X")
+            difficulty_label = {
+                "easy": "Dễ",
+                "medium": "Trung bình",
+                "hard": "Khó"
+            }.get(self.ai_difficulty, "Trung bình")
+            self.sidebar.set_status(f"Ván mới - Chơi với AI ({difficulty_label})", "#2ECC71")
+        else:
+            self.sidebar.set_status("Ván mới bắt đầu!", "#2ECC71")
+
         self.reset_timer()
 
     def force_skip_logic(self):
@@ -307,13 +363,61 @@ class CaroWindow(tk.Tk):
                     self.after(0, self.handle_skip_turn)
                 self.player.timer = 30
 
-    def handle_skip_turn(self):
+    def handle_timeout(self):
         """Xử lý hết giờ"""
         current_turn = self.game_state.get_current_turn()
         if current_turn == self.player.role:
             self.send_data("SKIP")
             messagebox.showinfo("Hết giờ", "Bạn đã mất lượt!")
             self.force_skip_logic()
+
+    # ========== AI LOGIC ==========
+    def start_ai_game(self):
+        """Khởi tạo game với AI"""
+        difficulty_label = {
+            "easy": "Dễ",
+            "medium": "Trung bình",
+            "hard": "Khó"
+        }.get(self.ai_difficulty, "Trung bình")
+
+        self.sidebar.set_status(f"Chơi với AI ({difficulty_label}) - Bạn là X", "#2ECC71")
+        self.sidebar.set_role("X (Người chơi)")
+        self.sidebar.set_room_code(f"AI: {difficulty_label}")
+        self.reset_timer()
+
+    def ai_make_move(self):
+        """AI thực hiện nước đi"""
+        if not self.ai or self.game_mode != "ai":
+            return
+
+        try:
+            # Lấy board hiện tại
+            board = self.game_state.board
+
+            # AI tính toán nước đi
+            move = self.ai.get_move(board, OX_ROWS, OX_COLS, 5)
+
+            if move:
+                x, y = move
+                # Thực hiện nước đi (sending=False vì không cần gửi qua mạng)
+                self.handle_button_click(x, y, sending=False)
+            else:
+                # Không còn nước đi - hòa
+                messagebox.showinfo("Kết thúc", "Hòa! Không còn nước đi.")
+                self.ask_rematch()
+        except Exception as e:
+            print(f"AI Error: {e}")
+            # Nếu AI lỗi, đánh random
+            import random
+            empty_cells = []
+            for r in range(OX_ROWS):
+                for c in range(OX_COLS):
+                    if self.game_state.board[r][c] == "":
+                        empty_cells.append((r, c))
+            if empty_cells:
+                x, y = random.choice(empty_cells)
+                self.handle_button_click(x, y, sending=False)
+            self.handle_button_click(x, y, sending=False)
 
     # ========== CHAT HANDLERS ==========
     def handle_chat_send(self, text):
@@ -330,6 +434,30 @@ class CaroWindow(tk.Tk):
 
         # Gửi qua mạng
         self.send_data(f"CHAT|{sender_name}|{text}")
+
+    # ========== BACK TO MENU ==========
+    def handle_back_to_menu(self):
+        """Xử lý quay lại menu"""
+        result = messagebox.askyesno(
+            "Xác nhận",
+            "Bạn có chắc muốn quay lại menu?\nGame hiện tại sẽ kết thúc."
+        )
+        if result:
+            # Dọn dẹp
+            self.timer_running = False
+            if self.game_server:
+                self.game_server.stop()
+            if self.game_client:
+                self.game_client.disconnect()
+
+            # Đóng cửa sổ game và quay lại menu
+            self.destroy()
+
+            # Import và hiển thị menu
+            from ui.menu_screen import MenuScreen
+            from main import start_game
+            menu = MenuScreen(on_mode_selected=start_game)
+            menu.mainloop()
 
     # ========== NETWORK SEND ==========
     def send_data(self, action):
