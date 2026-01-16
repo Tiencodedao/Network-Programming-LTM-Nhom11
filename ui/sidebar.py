@@ -6,7 +6,7 @@ from ui.chat_widget import ChatWidget
 
 
 class SidebarWidget(tk.Frame):
-    def __init__(self, parent, on_join_room=None, on_create_room=None, on_undo=None, on_chat_send=None, on_back_to_menu=None):
+    def __init__(self, parent, on_join_room=None, on_create_room=None, on_undo=None, on_chat_send=None, on_back_to_menu=None, game_mode=None):
         """
         Args:
             parent: Widget cha
@@ -15,6 +15,7 @@ class SidebarWidget(tk.Frame):
             on_undo: Callback khi undo
             on_chat_send: Callback khi gửi tin nhắn chat (text)
             on_back_to_menu: Callback khi quay lại menu
+            game_mode: Chế độ game ("ai" hoặc "pvp")
         """
         super().__init__(parent, bg="#34495E", width=250, padx=10, pady=10)
         self.pack_propagate(False)
@@ -24,6 +25,7 @@ class SidebarWidget(tk.Frame):
         self.on_undo = on_undo
         self.on_chat_send = on_chat_send
         self.on_back_to_menu = on_back_to_menu
+        self.game_mode = game_mode
 
         self.chat_widget = None  # Sẽ được tạo trong _create_widgets
 
@@ -34,48 +36,66 @@ class SidebarWidget(tk.Frame):
         # Tiêu đề
         lbl_title = tk.Label(
             self,
-            text="CARO LAN",
+            text="ĐIỀU KHIỂN",
             font=("Helvetica", 20, "bold"),
             bg="#34495E",
             fg="#F1C40F"
         )
         lbl_title.pack(pady=(10, 20))
 
-        # Khu vực kết nối
-        lbl_room = tk.Label(
-            self,
-            text="MÃ PHÒNG:",
-            font=("Arial", 10, "bold"),
-            bg="#34495E",
-            fg="#ECF0F1"
-        )
-        lbl_room.pack(anchor="w")
+        # Khu vực kết nối - chỉ hiện ở chế độ PvP
+        if self.game_mode != "ai":
+            lbl_room = tk.Label(
+                self,
+                text="MÃ PHÒNG:",
+                font=("Arial", 10, "bold"),
+                bg="#34495E",
+                fg="#ECF0F1"
+            )
+            lbl_room.pack(anchor="w")
 
-        self.entry_code = tk.Entry(self, font=("Arial", 14), justify='center', bg="#FFF")
-        self.entry_code.pack(fill=tk.X, pady=5)
+            self.entry_code = tk.Entry(self, font=("Arial", 14), justify='center', bg="#FFF")
+            self.entry_code.pack(fill=tk.X, pady=5)
 
-        btn_join = tk.Button(
-            self,
-            text="VÀO PHÒNG",
-            bg="#2ECC71",
-            fg="white",
-            font=("Arial", 10, "bold"),
-            command=self._handle_join_room
-        )
-        btn_join.pack(fill=tk.X, pady=5)
+            btn_join = tk.Button(
+                self,
+                text="VÀO PHÒNG",
+                bg="#2ECC71",
+                fg="white",
+                font=("Arial", 10, "bold"),
+                command=self._handle_join_room
+            )
+            btn_join.pack(fill=tk.X, pady=5)
 
-        btn_create = tk.Button(
-            self,
-            text="TẠO PHÒNG",
-            bg="#E67E22",
-            fg="white",
-            font=("Arial", 10, "bold"),
-            command=self._handle_create_room
-        )
-        btn_create.pack(fill=tk.X, pady=5)
+            btn_create = tk.Button(
+                self,
+                text="TẠO PHÒNG",
+                bg="#E67E22",
+                fg="white",
+                font=("Arial", 10, "bold"),
+                command=self._handle_create_room
+            )
+            btn_create.pack(fill=tk.X, pady=5)
 
-        # Đường kẻ ngang
-        tk.Frame(self, height=2, bg="#ECF0F1").pack(fill=tk.X, pady=20)
+            # Đường kẻ ngang
+            tk.Frame(self, height=2, bg="#ECF0F1").pack(fill=tk.X, pady=20)
+        else:
+            # Ở chế độ AI, hiển thị thông tin độ khó
+            lbl_ai_info = tk.Label(
+                self,
+                text="CHẾ ĐỘ AI",
+                font=("Arial", 10, "bold"),
+                bg="#34495E",
+                fg="#ECF0F1"
+            )
+            lbl_ai_info.pack(anchor="w")
+
+            self.entry_code = tk.Entry(self, font=("Arial", 14), justify='center', bg="#FFF")
+            self.entry_code.pack(fill=tk.X, pady=5)
+            self.entry_code.config(state='readonly')  # Chỉ đọc, hiển thị độ khó
+
+            # Đường kẻ ngang
+            tk.Frame(self, height=2, bg="#ECF0F1").pack(fill=tk.X, pady=20)
 
         # Thông tin người chơi
         self.lbl_role = tk.Label(
@@ -129,23 +149,24 @@ class SidebarWidget(tk.Frame):
         )
         btn_menu.pack(fill=tk.X, pady=(0, 10))
 
-        # Chat box
-        chat_frame = tk.LabelFrame(
-            self,
-            text="💬 Chat",
-            font=("Arial", 10, "bold"),
-            bg="#34495E",
-            fg="#ECF0F1",
-            padx=5,
-            pady=5
-        )
-        chat_frame.pack(fill='both', expand=True, pady=(5, 0))
+        # Chat box - chỉ hiện ở chế độ PvP
+        if self.game_mode != "ai":
+            chat_frame = tk.LabelFrame(
+                self,
+                text="💬 Chat",
+                font=("Arial", 10, "bold"),
+                bg="#34495E",
+                fg="#ECF0F1",
+                padx=5,
+                pady=5
+            )
+            chat_frame.pack(fill='both', expand=True, pady=(5, 0))
 
-        self.chat_widget = ChatWidget(
-            chat_frame,
-            on_send=self._handle_chat_send
-        )
-        self.chat_widget.pack(fill='both', expand=True)
+            self.chat_widget = ChatWidget(
+                chat_frame,
+                on_send=self._handle_chat_send
+            )
+            self.chat_widget.pack(fill='both', expand=True)
 
     def _handle_join_room(self):
         """Xử lý nút vào phòng"""

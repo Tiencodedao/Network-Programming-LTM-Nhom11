@@ -31,7 +31,7 @@ OX_COLS = 20
 class CaroWindow(tk.Tk):
     def __init__(self, initial_mode=None, ai_difficulty="medium"):
         super().__init__()
-        self.title("Caro LAN Ultimate - Modular Structure")
+        self.title("Caro - Game")
         self.geometry("1100x700")
         self.configure(bg=COLOR_BG_MAIN)
 
@@ -81,7 +81,8 @@ class CaroWindow(tk.Tk):
             on_create_room=self.handle_create_room,
             on_undo=self.handle_undo,
             on_chat_send=self.handle_chat_send,
-            on_back_to_menu=self.handle_back_to_menu
+            on_back_to_menu=self.handle_back_to_menu,
+            game_mode=self.game_mode
         )
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -255,9 +256,13 @@ class CaroWindow(tk.Tk):
         # Reset timer
         self.reset_timer()
 
-        # Nếu là chế độ AI và vừa là lượt người chơi, cho AI đánh
-        if self.game_mode == "ai" and current_turn == self.player.role and sending:
-            self.after(500, self.ai_make_move)  # Delay 500ms cho tự nhiên
+        # Nếu là chế độ AI và vừa là lượt người chơi đánh, cho AI đánh ngay sau
+        # Kiểm tra: lượt vừa đánh là người chơi VÀ bây giờ đến lượt AI
+        if self.game_mode == "ai" and sending and current_turn == self.player.role:
+            # Sau khi người chơi đánh, bây giờ là lượt AI
+            next_turn = self.game_state.get_current_turn()
+            if next_turn != self.player.role:  # Đảm bảo đã chuyển lượt sang AI
+                self.after(500, self.ai_make_move)  # Delay 500ms cho tự nhiên
 
     def handle_undo(self, synchronized=True):
         """Xử lý đi lại"""
@@ -412,12 +417,11 @@ class CaroWindow(tk.Tk):
             empty_cells = []
             for r in range(OX_ROWS):
                 for c in range(OX_COLS):
-                    if self.game_state.board[r][c] == "":
+                    if (r, c) not in self.game_state.board:  # Fix: check if cell is empty
                         empty_cells.append((r, c))
             if empty_cells:
                 x, y = random.choice(empty_cells)
                 self.handle_button_click(x, y, sending=False)
-            self.handle_button_click(x, y, sending=False)
 
     # ========== CHAT HANDLERS ==========
     def handle_chat_send(self, text):
